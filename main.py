@@ -1,7 +1,9 @@
-from flask import Flask, render_template,request, Response
+from flask import Flask, render_template,request, Response, redirect, url_for
 from flask_wtf.csrf import CSRFProtect
 from flask import redirect
 from flask import g
+from sqlalchemy import func
+from datetime import datetime
 
 from config import DevelopmentConfig
 
@@ -11,6 +13,7 @@ import forms
 from models import db
 from models import Empleados
 from models import detalle
+from models import venta
 
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig)
@@ -94,26 +97,15 @@ def ABC_Completo():
     empleado=Empleados.query.all()
     return render_template("ABC_Completo.html", empleado=empleado)
 
-@app.route('/eliminar_registros', methods=['POST'])
-def eliminar_registros():
-    pizza_form=forms.PizzaForm(request.form)
-    deta = detalle.query.filter_by(activo=True).all()
-
-    if request.method == 'POST':
-        ids_a_eliminar = request.form.getlist('eliminar')
-        
-        print(ids_a_eliminar)
-
-    return render_template("pizzas.html", form=pizza_form, detalle=deta);
-
 @app.route("/pizzas", methods=["GET", "POST"])
 def pizzas():
+    datos_form=forms.DatosForm(request.form)
     pizza_form=forms.PizzaForm(request.form)
-    deta = detalle.query.filter_by(activo=True).all()
-
-    if request.method == 'POST':
+    
+    if request.method == 'POST' and pizza_form.validate():
         subt = 0
         ingredientes = ''
+        precioBase = 0
         check_jamon = pizza_form.checkJamon.data
         check_pina = pizza_form.checkPina.data
         check_champ = pizza_form.checkChamp.data
@@ -130,17 +122,173 @@ def pizzas():
             subt += 10
             ingredientes += 'Champiñones'
 
+        if pizza_form.tamano.data == 'chica':
+            precioBase = 40
+
+        if pizza_form.tamano.data == 'mediana':
+            precioBase = 80
+
+        if pizza_form.tamano.data == 'grande':
+            precioBase = 120
+
         det = detalle(
             tamano=pizza_form.tamano.data,
             ingredientes=ingredientes,
             cantPizzas = pizza_form.numPizzas.data,
-            subtotal = (subt * pizza_form.numPizzas.data) + int(pizza_form.tamano.data),
+            subtotal = (subt + precioBase) * pizza_form.numPizzas.data,
             activo = True
         )
         db.session.add(det)
         db.session.commit();
 
-    return render_template("pizzas.html", form=pizza_form, detalle=deta);
+    deta = detalle.query.filter_by(activo=True).all()
+
+    # Obtener la fecha actual
+    hoy = datetime.now().date()
+
+# Consulta 1
+    ventas = (
+        db.session.query(
+            venta.nombre.label('nombre'),
+            detalle.idVenta.label('idVenta'),
+            func.sum(detalle.subtotal).label('total')
+        )
+         .join(venta, detalle.idVenta == venta.id)
+        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
+        .group_by(venta.nombre, detalle.idVenta)
+        .all()
+    )
+
+# Consulta 2
+    total = (
+        db.session.query(func.coalesce(func.sum(detalle.subtotal), 0).label('tot'))
+        .join(venta, detalle.idVenta == venta.id)
+        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
+    )
+
+    return render_template("pizzas.html", form=pizza_form, form_datos=datos_form, detalle=deta, ventas=ventas, total=total);
+
+@app.route('/eliminar_registros', methods=['POST'])
+def eliminar_registros():
+    pizza_form=forms.PizzaForm(request.form)
+    deta = detalle.query.filter_by(activo=True).all()
+
+    if request.method == 'POST':
+        ids_a_eliminar = request.form.getlist('eliminar')
+        
+        for id in ids_a_eliminar:
+            det=detalle.query.get(id)
+            db.session.delete(det)
+            db.session.commit()
+
+    return redirect(url_for('pizzas'))
+
+@app.route("/modificarPizza", methods=["GET", "POST"])
+def modificarPizza():
+    pizza_form=forms.PizzaForm(request.form)
+    if request.method=="GET":
+        id=request.args.get("id")
+        pizza1=db.session.query(detalle).filter(detalle.id==id).first()
+
+        pizza_form.id.data=request.args.get("id")
+        pizza_form.tamano.data=pizza1.tamano
+        pizza_form.numPizzas.data=pizza1.cantPizzas
+
+        pizza_form.checkJamon.data = True if "Jamón" in pizza1.ingredientes else False
+        pizza_form.checkPina.data = True if "Piña" in pizza1.ingredientes else False
+        pizza_form.checkChamp.data = True if "Champiñones" in pizza1.ingredientes else False
+
+    if request.method=='POST':
+        subt = 0
+        ingredientes = ''
+        precionBase = 0
+        check_jamon = pizza_form.checkJamon.data
+        check_pina = pizza_form.checkPina.data
+        check_champ = pizza_form.checkChamp.data
+        if check_jamon:
+            subt += 10
+            ingredientes = "Jamón-"
+
+        if check_pina:
+            subt += 10
+            ingredientes += "Piña-"
+
+        if check_champ:
+            subt += 10
+            ingredientes += 'Champiñones'
+
+        if pizza_form.tamano.data == 'chica':
+            precioBase = 40
+
+        if pizza_form.tamano.data == 'mediana':
+            precioBase = 80
+
+        if pizza_form.tamano.data == 'grande':
+            precioBase = 120
+
+        id=pizza_form.id.data
+        pizza1=db.session.query(detalle).filter(detalle.id==id).first()
+
+        pizza1.tamano=pizza_form.tamano.data
+        pizza1.cantPizzas=pizza_form.numPizzas.data
+        pizza1.ingredientes=ingredientes
+        pizza1.subtotal=(subt + precioBase) * pizza_form.numPizzas.data
+
+        db.session.add(pizza1)
+        db.session.commit()
+        return redirect('pizzas')
+    
+    return render_template("modificarPizza.html", form=pizza_form)
+
+@app.route("/finalizarCompra", methods=["GET", "POST"])
+def finalizarCompra():
+    datos_form=forms.DatosForm(request.form)
+    pizza_form=forms.PizzaForm(request.form)
+
+    if request.method == "POST" and datos_form.validate():
+        ven = venta(
+            nombre=datos_form.nombre.data,  
+            direccion=datos_form.direccion.data,  
+            fechaCompra=datos_form.fechaCompra.data,    
+            telefono=datos_form.telefono.data,    
+        )
+        db.session.add(ven)
+        db.session.commit();
+
+        nuevo_id = ven.id
+        detalles = detalle.query.filter_by(activo=True).all()
+        for det in detalles:
+            det.activo = False
+            det.idVenta = nuevo_id
+            db.session.add(ven)
+        db.session.commit();
+    
+    deta = detalle.query.filter_by(activo=True).all()
+
+    # Obtener la fecha actual
+    hoy = datetime.now().date()
+
+# Consulta 1
+    ventas = (
+        db.session.query(
+            venta.nombre.label('nombre'),
+            detalle.idVenta.label('idVenta'),
+            func.sum(detalle.subtotal).label('total')
+        )
+         .join(venta, detalle.idVenta == venta.id)
+        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
+        .group_by(venta.nombre, detalle.idVenta)
+        .all()
+    )
+
+# Consulta 2
+    total = (
+        db.session.query(func.coalesce(func.sum(detalle.subtotal), 0).label('tot'))
+        .join(venta, detalle.idVenta == venta.id)
+        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
+    )
+
+    return render_template("pizzas.html", form=pizza_form, form_datos=datos_form, detalle=deta, ventas=ventas, total=total);
 
 if __name__=="__main__":
     csrf.init_app(app)
