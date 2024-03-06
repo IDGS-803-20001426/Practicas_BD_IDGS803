@@ -1,0 +1,81 @@
+{%extends "layout.html"%}
+
+{%block content%}
+{% from "_macros.html" import render_field%}
+
+<div class="container">
+    <div class="row">
+        <center>
+
+            <form action="/pizzas" name="registro" id="registro" method="post">
+                <div class="row control-group">
+                    <div class="form-group col-xs-12 float-label-form-group controls">
+                        {{ render_field(form.nombre, class="form-control") }}
+                    </div>
+                </div>
+                <div class="row control-group">
+                    <div class="form-group col-xs-12 float-label-form-group controls">
+                        {{ render_field(form.direccion, class="form-control") }}
+                    </div>
+                </div>
+                <div class="row control-group">
+                    <div class="form-group col-xs-12 float-label-form-group controls">
+                        {{ render_field(form.fechaCompra, class="form-control") }}
+                    </div>
+                </div>
+                <div class="row control-group">
+                    <div class="form-group col-xs-12 float-label-form-group controls">
+                        {{ render_field(form.tamano, class="form-control") }}
+                    </div>
+                </div>
+                <div class="row control-group">
+                    <div class="form-group col-xs-12 float-label-form-group controls">
+                        <label for="">Ingredientes</label>
+                        {{ render_field(form.checkJamon, class="form-control") }}
+                        {{ render_field(form.checkPina, class="form-control") }}
+                        {{ render_field(form.checkChamp, class="form-control") }}
+                    </div>
+                </div>
+                <div class="row control-group">
+                    <div class="form-group col-xs-12 float-label-form-group controls">
+                        {{ render_field(form.numPizzas, class="form-control") }}
+                    </div>
+                </div>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="submit" id="registrar" name="registrar" value="Registrar">
+            </form>
+        </center>
+    </div>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Tamaño</th>
+                <th>Ingredientes</th>
+                <th>Num Pizzas</th>
+                <th>Subtota</th>
+            </tr>
+        </thead>
+        <tbody>
+            <form id="formEliminar" method="post" action="/eliminar_registros"></form>
+                {% for det in detalle %}
+                    <tr>
+                        <td><input type="checkbox" name="eliminar" id="{{det.id}}"></td>
+                        <td>{{det.tamano}}</td>
+                        <td>{{det.ingredientes}}</td>
+                        <td>{{det.cantPizzas}}</td>
+                        <td>{{det.subtotal}}</td>
+                    </tr>
+                {% endfor %}
+                {{ csrf_token() }}  <!-- Incluye el campo CSRF aquí -->
+            </form>
+        </tbody>
+    </table>
+    <button onclick="eliminarSeleccionados()">Quitar</button>
+    <button>Terminar</button>
+
+</div>
+
+<script src="../static/js/pizzas.js"></script>
+{%endblock%}

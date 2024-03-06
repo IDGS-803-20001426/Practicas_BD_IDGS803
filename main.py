@@ -10,6 +10,7 @@ import forms
 
 from models import db
 from models import Empleados
+from models import detalle
 
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig)
@@ -93,6 +94,53 @@ def ABC_Completo():
     empleado=Empleados.query.all()
     return render_template("ABC_Completo.html", empleado=empleado)
 
+@app.route('/eliminar_registros', methods=['POST'])
+def eliminar_registros():
+    pizza_form=forms.PizzaForm(request.form)
+    deta = detalle.query.filter_by(activo=True).all()
+
+    if request.method == 'POST':
+        ids_a_eliminar = request.form.getlist('eliminar')
+        
+        print(ids_a_eliminar)
+
+    return render_template("pizzas.html", form=pizza_form, detalle=deta);
+
+@app.route("/pizzas", methods=["GET", "POST"])
+def pizzas():
+    pizza_form=forms.PizzaForm(request.form)
+    deta = detalle.query.filter_by(activo=True).all()
+
+    if request.method == 'POST':
+        subt = 0
+        ingredientes = ''
+        check_jamon = pizza_form.checkJamon.data
+        check_pina = pizza_form.checkPina.data
+        check_champ = pizza_form.checkChamp.data
+
+        if check_jamon:
+            subt += 10
+            ingredientes = "Jamón-"
+
+        if check_pina:
+            subt += 10
+            ingredientes += "Piña-"
+
+        if check_champ:
+            subt += 10
+            ingredientes += 'Champiñones'
+
+        det = detalle(
+            tamano=pizza_form.tamano.data,
+            ingredientes=ingredientes,
+            cantPizzas = pizza_form.numPizzas.data,
+            subtotal = (subt * pizza_form.numPizzas.data) + int(pizza_form.tamano.data),
+            activo = True
+        )
+        db.session.add(det)
+        db.session.commit();
+
+    return render_template("pizzas.html", form=pizza_form, detalle=deta);
 
 if __name__=="__main__":
     csrf.init_app(app)
