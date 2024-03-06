@@ -30,6 +30,7 @@ class detalle(db.Model):
     cantPizzas=db.Column(db.Integer())
     subtotal=db.Column(db.Float())
     activo=db.Column(db.Boolean())
+    idVenta=db.Column(db.Integer())
 
 class venta(db.Model):
     __Tablename__='venta'

@@ -26,7 +26,7 @@ class UsersForm(Form):
         validators.length(max=10, message='Ingresa un sueldo valido')
     ])
 
-class PizzaForm(Form):
+class DatosForm(Form):
     id=IntegerField(id)
     nombre=StringField('nombre', [
         validators.DataRequired(message='El campo es requerido'),
@@ -43,8 +43,11 @@ class PizzaForm(Form):
     fechaCompra=DateField('Fecha Compra', [
         validators.DataRequired(message='El campo es requerido')
     ])
+
+class PizzaForm(Form):
+    id=IntegerField(id)
     tamano=RadioField('tamaño',
-                          choices=[('Chica', 'Chica $40'),('Mediana', 'Mediana $80'),('Grande', 'Grande $120')])
+                          choices=[('chica', 'Chica $40'),('mediana', 'Mediana $80'),('grande', 'Grande $120')])
     
     checkJamon=BooleanField('Jamón $10')
     checkPina=BooleanField('Piña $10')
@@ -53,4 +56,19 @@ class PizzaForm(Form):
     numPizzas=IntegerField('Cantidad Pizzas',[
         validators.DataRequired(message='El campo es requerido')
     ])
+
+    def validate(self):
+        # Llamamos al método validate de la clase base
+        if not Form.validate(self):
+            return False
+
+        # Validamos que al menos uno de los checks esté seleccionado
+        if not (self.checkJamon.data or self.checkPina.data or self.checkChamp.data):
+            message = 'Selecciona al menos un ingrediente'
+            self.checkJamon.errors.append(message)
+            self.checkPina.errors.append(message)
+            self.checkChamp.errors.append(message)
+            return False
+
+        return True
 

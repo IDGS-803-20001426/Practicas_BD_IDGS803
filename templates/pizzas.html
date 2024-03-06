@@ -3,79 +3,127 @@
 {%block content%}
 {% from "_macros.html" import render_field%}
 
+<link rel="stylesheet" href="../static/css/pizzas.css">
+
 <div class="container">
     <div class="row">
         <center>
-
-            <form action="/pizzas" name="registro" id="registro" method="post">
+            <h3>Pizzas</h3>
+            <form action="/finalizarCompra" name="datos" id="datos" method="POST"
+                style="display: flex; justify-content: space-between; border: solid 1px black; padding: 20px;">
                 <div class="row control-group">
                     <div class="form-group col-xs-12 float-label-form-group controls">
-                        {{ render_field(form.nombre, class="form-control") }}
+                        {{ render_field(form_datos.nombre, class="form-control") }}
                     </div>
                 </div>
                 <div class="row control-group">
                     <div class="form-group col-xs-12 float-label-form-group controls">
-                        {{ render_field(form.direccion, class="form-control") }}
+                        {{ render_field(form_datos.direccion, class="form-control") }}
                     </div>
                 </div>
                 <div class="row control-group">
                     <div class="form-group col-xs-12 float-label-form-group controls">
-                        {{ render_field(form.fechaCompra, class="form-control") }}
+                        {{ render_field(form_datos.fechaCompra, class="form-control") }}
                     </div>
                 </div>
                 <div class="row control-group">
                     <div class="form-group col-xs-12 float-label-form-group controls">
-                        {{ render_field(form.tamano, class="form-control") }}
-                    </div>
-                </div>
-                <div class="row control-group">
-                    <div class="form-group col-xs-12 float-label-form-group controls">
-                        <label for="">Ingredientes</label>
-                        {{ render_field(form.checkJamon, class="form-control") }}
-                        {{ render_field(form.checkPina, class="form-control") }}
-                        {{ render_field(form.checkChamp, class="form-control") }}
-                    </div>
-                </div>
-                <div class="row control-group">
-                    <div class="form-group col-xs-12 float-label-form-group controls">
-                        {{ render_field(form.numPizzas, class="form-control") }}
+                        {{ render_field(form_datos.telefono, class="form-control") }}
                     </div>
                 </div>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <input type="submit" id="registrar" name="registrar" value="Registrar">
+            </form>
+            <form action="/pizzas" name="registro" id="registro" method="post">
+                <div
+                    style="display: flex; justify-content: space-between; border: solid 1px black; padding: 10px; align-items: center;">
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 float-label-form-group controls">
+                            {{ render_field(form.tamano, class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 float-label-form-group controls">
+                            <label for="">Ingredientes</label>
+                            {{ render_field(form.checkJamon, class="form-control") }}
+                            {{ render_field(form.checkPina, class="form-control") }}
+                            {{ render_field(form.checkChamp, class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 float-label-form-group controls">
+                            {{ render_field(form.numPizzas, class="form-control") }}
+                        </div>
+                        <input type="submit" class="btn btn-success" id="registrar" name="registrar" value="Registrar">
+                    </div>
+                </div>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             </form>
         </center>
     </div>
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th></th>
-                <th>Tamaño</th>
-                <th>Ingredientes</th>
-                <th>Num Pizzas</th>
-                <th>Subtota</th>
-            </tr>
-        </thead>
-        <tbody>
-            <form id="formEliminar" method="post" action="/eliminar_registros"></form>
-                {% for det in detalle %}
+    <div class="row" style="display: flex; justify-content: space-between;">
+
+        <div>
+            <table>
+                <thead>
                     <tr>
-                        <td><input type="checkbox" name="eliminar" id="{{det.id}}"></td>
-                        <td>{{det.tamano}}</td>
-                        <td>{{det.ingredientes}}</td>
-                        <td>{{det.cantPizzas}}</td>
-                        <td>{{det.subtotal}}</td>
+                        <th></th>
+                        <th>Tamaño</th>
+                        <th>Ingredientes</th>
+                        <th>Num Pizzas</th>
+                        <th>Subtotal</th>
+                        <th>Acción</th>
                     </tr>
+                </thead>
+                <tbody>
+                    <form id="formEliminar" method="post" action="/eliminar_registros">
+                        {% for det in detalle %}
+                        <tr>
+                            <td><input type="checkbox" name="eliminar" value="{{ det.id }}" id="{{ det.id }}"></td>
+                            <td>{{det.tamano}}</td>
+                            <td>{{det.ingredientes}}</td>
+                            <td>{{det.cantPizzas}}</td>
+                            <td>{{det.subtotal}}</td>
+                            <td><a href="modificarPizza?id={{det.id}}" class="btn btn-warning">Modificar</a></td>
+                        </tr>
+                        {% endfor %}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    </form>
+                </tbody>
+            </table>
+            <button class="btn btn-danger" onclick="eliminarSeleccionados()">Quitar</button>
+            <button type="button" class="btn btn-primary" onclick="confirmarTerminar()">Terminar</button>
+        </div>
+        <div style="display: block; border: solid 1px black; padding: 10px;">
+            <p>Ventas realizadas el dia de hoy</p>
+            <div>
+                {% for v in ventas %}
+                <p>{{v.nombre}} ${{v.total}}</p>
                 {% endfor %}
-                {{ csrf_token() }}  <!-- Incluye el campo CSRF aquí -->
-            </form>
-        </tbody>
-    </table>
-    <button onclick="eliminarSeleccionados()">Quitar</button>
-    <button>Terminar</button>
+            </div>
+            <div>
+                {% for t in total %}
+                <p>Total: ${{t.tot}}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+
+    </div>
 
 </div>
+
+<script>
+    function confirmarTerminar() {
+        var confirmacion = confirm("¿Estás seguro de que deseas terminar?");
+        if (confirmacion) {
+            document.getElementById("datos").submit(); // Envía el formulario si se confirma
+        } else {
+            // Puedes hacer algo más si se cancela la confirmación
+            console.log("Terminar cancelado");
+        }
+    }
+</script>
 
 <script src="../static/js/pizzas.js"></script>
 {%endblock%}

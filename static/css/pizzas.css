@@ -1,0 +1,71 @@
+/* Estilos generales de la tabla */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  /* Bordes de celdas y espaciado */
+  table, th, td {
+    border: 1px solid #ddd;
+  }
+  
+  /* Colores de fondo y texto */
+  th, td {
+    padding: 12px;
+    text-align: left;
+  }
+  
+  /* Encabezados resaltados */
+  th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  /* Alternancia de colores en filas */
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  /* Resaltado al pasar el mouse sobre las filas */
+  tr:hover {
+    background-color: #e5e5e5;
+  }
+  
+  /* Texto centrado en celdas de encabezado */
+  th {
+    text-align: center;
+  }
+  
+  /* Sombreado sutil para resaltar áreas específicas */
+  .total-row {
+    background-color: #d6ebf2;
+  }
+  
+  /* Formato condicional (ejemplo para valores negativos) */
+  td.negative-value {
+    color: red;
+    font-weight: bold;
+  }
+
+  
+
+/* Estilos para las etiquetas */
+label {
+    font-weight: bold;
+}
+
+ul, ol {
+    list-style-type: none;
+}
+
+li{
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    justify-content: center;
+}
+
+li label{
+    margin: 0;
+}

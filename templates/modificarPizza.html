@@ -1,0 +1,48 @@
+{%extends "layout.html"%}
+
+{%block content%}
+{% from "_macros.html" import render_field%}
+
+<link rel="stylesheet" href="../static/css/pizzas.css">
+
+<div class="container">
+    <div class="row">
+        <center>
+            <h3>Modificar</h3>
+            <form action="/modificarPizza" name="registro" id="registro" method="post">
+                <div style="display: flex; justify-content: space-between; border: solid 1px black; padding: 10px; align-items: center;">
+                    <div class="row control-group" style="display: none;">
+                        <div class="form-group col-xs-12 float-label-form-group controls">
+                            {{ render_field(form.id, class="form-control") }}     
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 float-label-form-group controls">
+                            {{ render_field(form.tamano, class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 float-label-form-group controls">
+                            <label for="">Ingredientes</label>
+                            {{ render_field(form.checkJamon, class="form-control") }}
+                            {{ render_field(form.checkPina, class="form-control") }}
+                            {{ render_field(form.checkChamp, class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 float-label-form-group controls">
+                            {{ render_field(form.numPizzas, class="form-control") }}
+                        </div>
+                        <input type="submit" id="registrar" name="registrar" value="Actualizar" class="btn btn-primary">
+                    </div>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+                </div>
+            </form>
+        </center>
+    </div>
+
+</div>
+
+<script src="../static/js/pizzas.js"></script>
+{%endblock%}
