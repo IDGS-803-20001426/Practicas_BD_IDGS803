@@ -95,16 +95,51 @@
             <button type="button" class="btn btn-primary" onclick="confirmarTerminar()">Terminar</button>
         </div>
         <div style="display: block; border: solid 1px black; padding: 10px;">
-            <p>Ventas realizadas el dia de hoy</p>
             <div>
-                {% for v in ventas %}
-                <p>{{v.nombre}} ${{v.total}}</p>
-                {% endfor %}
+                <form method="post" id="formVentas" action="/filtrar-venta">
+                    {{ render_field(form_ventas.selectVenta, class="form-control") }}
+
+                    <div id="dia" name="dia_semana" class="additional-fields" style="display: none;">
+                        {{ render_field(form_ventas.dia_semana, class="form-control") }}
+                    </div>
+                    <div id="mes" name="mes" class="additional-fields" style="display: none;">
+                        {{ render_field(form_ventas.mes, class="form-control") }}
+                    </div>
+                    <div id="anio" name="anio" class="additional-fields" style="display: none;">
+                        {{ render_field(form_ventas.anio, class="form-control") }}
+                    </div>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="submit" value="Enviar">
+                </form>
             </div>
+            <p>Ventas realizadas</p>
             <div>
-                {% for t in total %}
-                <p>Total: ${{t.tot}}</p>
-                {% endfor %}
+                {% if ventas %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Total</th>
+                            <th>Fecha de Compra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in ventas %}
+                        <tr>
+                            <td>{{ row[1] }}</td>
+                            <td>{{ row[2] }}</td>
+                            <td>{{ row[3] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No hay resultados para mostrar.</p>
+                {% endif %}
+
+                {% if total %}
+                    <p>total: ${{total}}</p>
+                {% endif %}
             </div>
         </div>
 
@@ -123,6 +158,34 @@
             console.log("Terminar cancelado");
         }
     }
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var selectVenta = document.getElementById('select_venta');
+        var additionalFields = document.querySelectorAll('.additional-fields');
+
+        // Función para mostrar u ocultar campos adicionales
+        function toggleAdditionalFields() {
+            var selectedOption = selectVenta.value;
+
+            // Oculta todos los campos adicionales
+            additionalFields.forEach(function (field) {
+                field.style.display = 'none';
+            });
+
+            // Muestra el campo correspondiente a la opción seleccionada
+            var selectedField = document.getElementById(selectedOption);
+            if (selectedField) {
+                selectedField.style.display = 'block';
+            }
+        }
+
+        // Manejar el evento change
+        selectVenta.addEventListener('change', toggleAdditionalFields);
+
+        // Llamar a la función una vez para manejar el estado inicial
+        toggleAdditionalFields();
+    });
 </script>
 
 <script src="../static/js/pizzas.js"></script>

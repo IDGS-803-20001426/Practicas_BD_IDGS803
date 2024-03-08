@@ -17,6 +17,7 @@ from models import venta
 
 app = Flask(__name__)
 app.config.from_object(DevelopmentConfig)
+
 csrf=CSRFProtect()
 
 @app.errorhandler(404)
@@ -101,6 +102,7 @@ def ABC_Completo():
 def pizzas():
     datos_form=forms.DatosForm(request.form)
     pizza_form=forms.PizzaForm(request.form)
+    ventas_form=forms.VentaForm(request.form)
     
     if request.method == 'POST' and pizza_form.validate():
         subt = 0
@@ -146,27 +148,9 @@ def pizzas():
     # Obtener la fecha actual
     hoy = datetime.now().date()
 
-# Consulta 1
-    ventas = (
-        db.session.query(
-            venta.nombre.label('nombre'),
-            detalle.idVenta.label('idVenta'),
-            func.sum(detalle.subtotal).label('total')
-        )
-         .join(venta, detalle.idVenta == venta.id)
-        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
-        .group_by(venta.nombre, detalle.idVenta)
-        .all()
-    )
 
-# Consulta 2
-    total = (
-        db.session.query(func.coalesce(func.sum(detalle.subtotal), 0).label('tot'))
-        .join(venta, detalle.idVenta == venta.id)
-        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
-    )
 
-    return render_template("pizzas.html", form=pizza_form, form_datos=datos_form, detalle=deta, ventas=ventas, total=total);
+    return render_template("pizzas.html", form=pizza_form, form_datos=datos_form, detalle=deta,form_ventas=ventas_form);
 
 @app.route('/eliminar_registros', methods=['POST'])
 def eliminar_registros():
@@ -244,6 +228,7 @@ def modificarPizza():
 def finalizarCompra():
     datos_form=forms.DatosForm(request.form)
     pizza_form=forms.PizzaForm(request.form)
+    ventas_form=forms.VentaForm(request.form)
 
     if request.method == "POST" and datos_form.validate():
         ven = venta(
@@ -268,27 +253,57 @@ def finalizarCompra():
     # Obtener la fecha actual
     hoy = datetime.now().date()
 
-# Consulta 1
-    ventas = (
-        db.session.query(
-            venta.nombre.label('nombre'),
-            detalle.idVenta.label('idVenta'),
-            func.sum(detalle.subtotal).label('total')
-        )
-         .join(venta, detalle.idVenta == venta.id)
-        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
-        .group_by(venta.nombre, detalle.idVenta)
-        .all()
-    )
+    return redirect(url_for('pizzas'))
 
-# Consulta 2
-    total = (
-        db.session.query(func.coalesce(func.sum(detalle.subtotal), 0).label('tot'))
-        .join(venta, detalle.idVenta == venta.id)
-        .filter(venta.fechaCompra == hoy)  # Filtrar por la fecha de hoy
-    )
 
-    return render_template("pizzas.html", form=pizza_form, form_datos=datos_form, detalle=deta, ventas=ventas, total=total);
+@app.route("/filtrar-venta", methods=["GET", "POST"])
+def filtrar():
+    ventas_form=forms.VentaForm(request.form)
+    datos_form=forms.DatosForm(request.form)
+    pizza_form=forms.PizzaForm(request.form)
+    deta = detalle.query.filter_by(activo=True).all()
+    resultados = None
+    if request.method == 'POST' and ventas_form.validate():
+        filtro_seleccionado = ventas_form.selectVenta.data
+
+        print(filtro_seleccionado)
+
+              # Inicializar la consulta base
+        base_query = db.session.query(
+            venta.id,
+            venta.nombre,
+            func.sum(detalle.subtotal).label('total'),
+            func.DATE_FORMAT(venta.fechaCompra, '%W, %d de %M').label('fechaCompra')
+        ).join(detalle, venta.id == detalle.idVenta)
+
+        if filtro_seleccionado == 'dia':
+            # Obtener el valor del día del formulario
+            dia_seleccionado = ventas_form.dia_semana.data
+            # Agregar filtro por día a la consulta
+            base_query = base_query.filter(func.DAYNAME(venta.fechaCompra) == dia_seleccionado.capitalize())
+        
+        elif filtro_seleccionado == 'mes':
+            # Obtener el valor del mes del formulario
+            mes_seleccionado = ventas_form.mes.data
+            # Agregar filtro por mes a la consulta
+            base_query = base_query.filter(func.MONTH(venta.fechaCompra) == mes_seleccionado)
+        
+        elif filtro_seleccionado == 'anio':
+            # Obtener el valor del año del formulario
+            anio_seleccionado = ventas_form.anio.data
+            # Agregar filtro por año a la consulta
+            base_query = base_query.filter(func.YEAR(venta.fechaCompra) == int(anio_seleccionado))
+        
+        
+        
+        # Ejecutar la consulta final
+        resultados = base_query.group_by(venta.id, venta.nombre, venta.fechaCompra).all()
+
+        suma_totales = sum(item[2] for item in resultados)
+
+    return render_template("pizzas.html", form=pizza_form, form_datos=datos_form, ventas=resultados, detalle=deta, form_ventas=ventas_form, total=suma_totales)
+
+
 
 if __name__=="__main__":
     csrf.init_app(app)
