@@ -44,6 +44,24 @@ class DatosForm(Form):
         validators.DataRequired(message='El campo es requerido')
     ])
 
+class VentaForm(Form):
+    id=IntegerField(id)
+    opciones = [('dia', 'Día'), ('mes', 'Mes'), ('anio', 'Año')]
+    selectVenta = SelectField('Selecciona El filtro', choices=opciones, id='select_venta', validators=[
+        validators.DataRequired(message='El campo es requerido')
+    ])  
+    dia_semana = SelectField('Día de la semana', choices=[('lunes', 'Lunes'), ('martes', 'Martes'), ('miercoles', 'Miércoles'), ('jueves', 'Jueves'), ('viernes', 'Viernes'), ('sabado', 'Sábado'), ('domingo', 'Domingo')], validators=[
+        validators.DataRequired(message='El campo es requerido')
+    ])  
+    mes = SelectField('Mes', choices=[('1', 'Enero'), ('2', 'Febrero'), ('3', 'Marzo'), ('4', 'Abril'), ('5', 'Mayo'), ('6', 'Junio'), ('7', 'Julio'), ('8', 'Agosto'), ('9', 'Septiembre'), ('10', 'Octubre'), ('11', 'Noviembre'), ('12', 'Diciembre')], validators=[
+        validators.DataRequired(message='El campo es requerido')
+    ])  
+    anio = StringField('Año', default=2024, validators=[
+        validators.DataRequired(message='El campo es requerido'),
+        validators.length(min=4, max=4, message='Ingresa año valido')
+    ])  
+
+
 class PizzaForm(Form):
     id=IntegerField(id)
     tamano=RadioField('tamaño',
